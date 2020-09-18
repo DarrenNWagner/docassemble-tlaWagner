@@ -1,7 +1,56 @@
+objects:
+  - user: Individual
+  - ferrets: DAList.using(object_type=Individual)
+---
 mandatory: true
 question: |
-  Hello, ${ name }.
+  Hello, ${ user }!
+subquestion: |
+  If you live with ferrets, they are named ${ ferrets }.
+  
+  You have a ferret with a drinking problem. ${ user.has_ferret }.
+  
+  Your preferred ferret garment is ${ user.favourite_garment }.
+  
+  You been to the Paris Convention. ${ user.been_to_Paris }.
+  
+  You been to the Fancy-Class Championship in Belgrade. ${ user.been_to_Belgrade }.
+  
+  Your signature: ${ user.signature }
+  
 ---
-question: What is your name?
+generic object: Individual
+question: |
+  What is ${ x.object_possessive('name') }?
+fields: 
+  - First Name: x.name.first
+  - Last Name: x.name.last
+---
+question: Do you live with a ferret?
+yesno: ferrets.there_are_any
+---
+question: Do you live with other ferrets?
+yesno: ferrets.there_is_another
+---
+question: Do you have a ferret with a drinking problem?
+yesno: user.has_ferret
+---
+question: |
+  What is your preferred ferret garment?
+field: user.favourite_garment
+choices:
+  - a cape
+  - a top hat
+  - bike shorts
+  - none/nude
+---
+question: |
+  Have you attended any of the following major ferret conventions?
 fields:
-  - Name: name
+  - The Paris Ferret Expo: user.been_to_Paris
+    datatype: yesnowide
+  - The Ferreter's Fancy-Class Championship, Belgrade: user.been_to_Belgrade
+    datatype: yesnowide
+---
+question: Please sign
+signature: user.signature
