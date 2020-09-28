@@ -1,23 +1,39 @@
 objects:
   - user: Individual
-  - ferrets: DAList.using(object_type=Individual)
+  - family: DAList.using(object_type=Individual)
 ---
 mandatory: true
-question: |
-  Hello, ${ user }!
-subquestion: |
-  If you live with ferrets, they are named ${ ferrets }.
+question: Results
+attachments:
+  - Name: Document
+    filename: document
+    content: |
+      
+      Advice memo on legal aid eligibility:
+      
+      Dear ${ user },
+      
+      You have a legal issue. ${ user.has_issue }.
   
-  You have a ferret with a drinking problem. ${ user.has_ferret }.
-  
-  Your preferred ferret garment is ${ user.favourite_garment }.
-  
-  You been to the Paris Convention. ${ user.been_to_Paris }.
-  
-  You been to the Fancy-Class Championship in Belgrade. ${ user.been_to_Belgrade }.
-  
-  Your signature: ${ user.signature }
-  
+      % if user.has_issue:
+      The area of law that your legal issue relates to is: ${ user.law_area }.
+      % else:
+      This service requires a legal issue.
+      % endif
+      
+      % if len(family) > 0:
+      You live with the following family members: ${ family }.
+      % endif
+      
+      % if low_income:
+      You qualify for legal aid!
+      % else:
+      Unfortunately, you do not qualify for legal aid.      
+      % endif
+      
+      Your birthday is ${ format_date(birthday, format='EEEE, MMMM d, yyyy') }, which can also be written as ${ format_date(birthday, format="yyyy-MM-dd") }.
+              
+      Your signature: ${ user.signature }
 ---
 generic object: Individual
 question: |
@@ -26,31 +42,31 @@ fields:
   - First Name: x.name.first
   - Last Name: x.name.last
 ---
-question: Do you live with a ferret?
-yesno: ferrets.there_are_any
+question: Do you live with any family members?
+yesno: family.there_are_any
 ---
-question: Do you live with other ferrets?
-yesno: ferrets.there_is_another
+question: Do you live with other family members?
+yesno: family.there_is_another
 ---
-question: Do you have a ferret with a drinking problem?
-yesno: user.has_ferret
+question: Do you have a legal issue?
+yesno: user.has_issue
 ---
 question: |
-  What is your preferred ferret garment?
-field: user.favourite_garment
+  What area of law does your legal issue relate to?
+field: user.law_area
 choices:
-  - a cape
-  - a top hat
-  - bike shorts
-  - none/nude
+  - criminal
+  - family
+  - immigration
+  - not sure
 ---
-question: |
-  Have you attended any of the following major ferret conventions?
+question: Do you have a low annual household income relative to the number of people in your household?
+yesno: low_income
+---
+question: What is your birthday?
 fields:
-  - The Paris Ferret Expo: user.been_to_Paris
-    datatype: yesnowide
-  - The Ferreter's Fancy-Class Championship, Belgrade: user.been_to_Belgrade
-    datatype: yesnowide
+  - Birthday: birthday
+    datatype: date
 ---
 question: Please sign
 signature: user.signature
