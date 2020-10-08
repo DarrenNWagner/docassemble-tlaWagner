@@ -1,3 +1,20 @@
+code: |
+  
+  if (not user.has_lawyer and not user.can_afford) or (not user.has_acting_lawyer):
+    user_unrepresented = True
+  else:
+    user_unrepresented = False
+
+  if user.legal_matter_Alberta and user.lives_Alberta:
+    user_resident = True
+  else:
+    user_resident = False
+
+  if user.had_LAA_assistance or (user_unrepresented and user_resident and (user.has_family_issue or user.has_criminal_issue)):
+    user_eligible = True
+  else:
+    user_eligible = False
+---
 objects:
   - user: Individual
   - family: DAList.using(object_type=Individual)
@@ -13,12 +30,10 @@ attachments:
       
       Dear ${ user },
       
-      You have a legal issue. ${ user.has_issue }.
+      You have used Legal Aid Alberta before on an unrelated matter. ${ user.has_prior_issue }.
   
-      % if user.has_issue:
-      The area of law that your legal issue relates to is: ${ user.law_area }.
-      % else:
-      This service requires a legal issue.
+      % if user.has_prior_issue:
+      Your prior issue assisted by LAA related to: ${ user.law_area }.
       % endif
       
       % if len(family) > 0:
@@ -26,9 +41,27 @@ attachments:
       % endif
       
       % if low_income:
-      You qualify for legal aid!
+      You are considered low income. You get a special discount.
       % else:
-      Unfortunately, you do not qualify for legal aid.      
+      You exceed the low income threshold for the special discount.     
+      % endif
+      
+      % if user_unrepresented:
+      You meet the requirements of being unrepresented.
+      % else:
+      You do not meet the requirements of being unrepresented.
+      % endif
+      
+      % if user_resident:
+      You meet the residency requirements.
+      % else:
+      You do not meet the residency requirements.
+      % endif
+      
+      % if user_eligible:
+      You qualify for legal aid services.
+      % else:
+      You do not qualify for legal aid services.
       % endif
       
       Your birthday is ${ format_date(birthday, format='EEEE, MMMM d, yyyy') }, which can also be written as ${ format_date(birthday, format="yyyy-MM-dd") }.
@@ -48,16 +81,39 @@ yesno: family.there_are_any
 question: Do you live with other family members?
 yesno: family.there_is_another
 ---
-question: Do you have a legal issue?
-yesno: user.has_issue
+question: Have you used Legal Aid Alberta before on an unrelated matter?
+yesno: user.has_prior_issue
+---
+question: Do you have a lawyer?
+yesno: user.has_lawyer
+---
+question: Can you afford a lawyer?
+yesno: user.can_afford
+---
+question: If you have a lawyer, is that lawyer still acting for you?
+yesno: user.has_acting_lawyer
+---
+question: Is your legal matter located in Alberta?
+yesno: user.legal_matter_Alberta
+---
+question: Is your legal matter a family law matter?
+yesno: user.has_family_issue
+---
+question: Is your legal matter a criminal law matter?
+yesno: user.has_criminal_issue
+---
+question: Do you live in Alberta?
+yesno: user.lives_Alberta
+---
+question: Is your matter an appeal of a matter for which you received LAA assistance?
+yesno: user.had_LAA_assistance
 ---
 question: |
-  What area of law does your legal issue relate to?
+  If you had a prior issue assisted by LAA, what did the matter relate to?
 field: user.law_area
 choices:
   - criminal
   - family
-  - immigration
   - not sure
 ---
 question: Do you have a low annual household income relative to the number of people in your household?
