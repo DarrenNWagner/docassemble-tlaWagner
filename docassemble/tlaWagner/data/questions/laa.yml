@@ -4,11 +4,15 @@ objects:
   - user.income: Value
   - user.income_year: Value
   - user.income_month: Value
-  - family: DAList.using(object_type=Individual)
+  - family: DAList.using(object_type=Individual, complete_attribute="complete")
   - family[i].assets: Value
   - family[i].income: Value
   - family[i].income_year: Value
   - family[i].income_month: Value
+---
+code: |
+  family[i].income_month.exists
+  family[i].complete = True
 ---
 code: |
   if user.had_LAA_assistance or (user_unrepresented and user_resident and (user.has_family_issue or user.has_criminal_issue)):
