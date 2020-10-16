@@ -1,59 +1,194 @@
+objects:
+  - user: Individual
+  - user.assets: Value
+  - user.income: Value
+  - user.income_year: Value
+  - user.income_month: Value
+  - family: DAList.using(object_type=Individual)
+  - family[i].assets: Value
+  - family[i].income: Value
+  - family[i].income_year: Value
+  - family[i].income_month: Value
+---
 code: |
-  
-  if (not user.has_lawyer and not user.can_afford) or (not user.has_acting_lawyer):
-    user_unrepresented = True
-  else:
-    user_unrepresented = False
-
-  if user.legal_matter_Alberta and user.lives_Alberta:
-    user_resident = True
-  else:
-    user_resident = False
-
   if user.had_LAA_assistance or (user_unrepresented and user_resident and (user.has_family_issue or user.has_criminal_issue)):
     user_eligible = True
   else:
     user_eligible = False
 ---
-objects:
-  - user: Individual
-  - family: DAList.using(object_type=Individual)
+code: |
+  if (not user.has_lawyer and not user.can_afford) or (not user.has_acting_lawyer):
+    user_unrepresented = True
+  else:
+    user_unrepresented = False
+---
+code: |
+  if user.legal_matter_Alberta and user.lives_Alberta:
+    user_resident = True
+  else:
+    user_resident = False
+---
+question: Do you live with any family members?
+yesno: family.there_are_any
+---
+question: Do you live with other family members?
+yesno: family.there_is_another
+---
+code: |
+  total_assets = 0
+  if user.assets.exists:
+    total_assets_user = total_assets_user + user.assets.value
+---
+code: |
+  total_income_month_user = 0
+  if user.income_month.exists:
+    total_income_month_user = total_income_month_user + user.income_month.value
+---
+code: |
+  total_income_year_user = 0
+  if user.income_year.exists:
+    total_income_year_user = total_income_year_user + user.income_year.value
+---
+code: |
+  total_assets = 0
+  for j in family:
+    if j.assets.exists:
+      total_assets = total_assets + j.assets.value
+---
+code: |
+  total_income_month = 0
+  for j in family:
+    if j.income_month.exists:
+      total_income_month = total_income_month + j.income_month.value
+---
+code: |
+  total_income_year = 0
+  for j in family:
+    if j.income_year.exists:
+      total_income_year = total_income_year + j.income_year.value
+---
+code: |
+  family_number = len(family)
+  if family_number > 5:
+    family_number = 5
+---
+code: |
+  if family_number == 0 and total_income_year_user <= 20021 and total_income_month_user <= 1668:
+    financially_eligible = True
+  elif family_number == 0 and total_income_year_user <= 22023 and total_income_month_user <= 1835:
+    marginally_financially_eligible = True
+  else:
+    financially_ineligible = True
+---
+code: |
+  if family_number == 1 and (total_income_year + total_income_year_user) <= 24788 and (total_income_month + total_income_month_user) <= 2066:
+    financially_eligible = True
+  elif family_number == 1 and (total_income_year + total_income_year_user) <= 27267 and (total_income_month + total_income_month_user) <= 2273:
+    marginally_financially_eligible = True
+  else:
+    financially_ineligible = True
+---
+code: |
+  if family_number == 2 and (total_income_year + total_income_year_user) <= 35275 and (total_income_month + total_income_month_user) <= 2940:
+    financially_eligible = True
+  elif family_number == 2 and (total_income_year + total_income_year_user) <= 38803 and (total_income_month + total_income_month_user) <= 3234:
+    marginally_financially_eligible = True
+  else:
+    financially_ineligible = True
+---
+code: |
+  if family_number == 3 and (total_income_year + total_income_year_user) <= 38134 and (total_income_month + total_income_month_user) <= 3178:
+    financially_eligible = True
+  elif family_number == 3 and (total_income_year + total_income_year_user) <= 41947 and (total_income_month + total_income_month_user) <= 3496:
+    marginally_financially_eligible = True
+  else:
+    financially_ineligible = True
+---
+code: |
+  if family_number == 4 and (total_income_year + total_income_year_user) <= 40995 and (total_income_month + total_income_month_user) <= 3416:
+    financially_eligible = True
+  elif family_number == 4 and (total_income_year + total_income_year_user) <= 45095 and (total_income_month + total_income_month_user) <= 3758:
+    marginally_financially_eligible = True
+  else:
+    financially_ineligible = True
+---
+code: |
+  if family_number == 5 and (total_income_year + total_income_year_user) <= 43855 and (total_income_month + total_income_month_user) <= 3655:
+    financially_eligible = True
+  elif family_number == 4 and (total_income_year + total_income_year_user) <= 48241 and (total_income_month + total_income_month_user) <= 4021:
+    marginally_financially_eligible = True
+  else:
+    financially_ineligible = True
 ---
 mandatory: true
 question: Results
 attachments:
   - Name: Document
-    filename: document
+    filename: Advice Memo on Legal Aid Eligibility
     content: |
       
-      Advice memo on legal aid eligibility:
+      Advice Memo on Legal Aid Eligibility:
       
       Dear ${ user },
       
-      You have used Legal Aid Alberta before on an unrelated matter. ${ user.has_prior_issue }.
-  
       % if user.has_prior_issue:
-      Your prior issue assisted by LAA related to: ${ user.law_area }.
+      You previously used Legal Aid Alberta on an issue related to ${ user.law_area }.
       % endif
-      
+
+      % if user.assets.exists:
+      You have $${ user.assets } in assets.
+      % endif
+        
+      % if user.income_month.exists:
+      You made $${ user.income_month } in the last 30 days.
+      % endif
+        
+      % if user.income_year.exists:
+      You made $${ user.income_year } in the last year.
+      % endif
+    
       % if len(family) > 0:
-      You live with the following family members: ${ family }.
+      You live with the following people: ${ family }.
+      % for j in family:
+  
+      The following finacial information applies to ${ j }.
+           
+      % if j.assets.exists:
+      ${ j } has $${ j.assets } in assests.
       % endif
-      
-      % if low_income:
-      You are considered low income. You get a special discount.
+        
+      % if j.income_month.exists:
+      ${ j } made $${ j.income_month } in the last 30 days.
+      % endif
+        
+      % if j.income_year.exists:
+      ${ j } made $${ j.income_year } in the last year.
+      % endif
+  
+      % endfor
+  
+      The total annual income of your household is ${ currency(total_income_year + total_income_year_user) } and the total monthly income of your household is ${ currency(total_income_month + total_income_month_user) }.
+  
+      % if financially_ineligible:
+      **Based on your household income, you are not financially eligible for legal aid services.**
+      % elif marginally_financially_eligible:
+      **Based on your household income, you are financially eligible for legal aid services.**
       % else:
-      You exceed the low income threshold for the special discount.     
+      **Based on your household income, you are financially eligible for legal aid services.**
       % endif
-      
+  
+      % else:
+      You have not disclosed any household members.
+      % endif
+  
       % if user_unrepresented:
-      You meet the requirements of being unrepresented.
+      You do not have a lawyer and cannot afford one. You meet the requirements of being unrepresented.
       % else:
-      You do not meet the requirements of being unrepresented.
+      You either have a lawyer or can afford one. You do not meet the requirements of being unrepresented.
       % endif
       
       % if user_resident:
-      You meet the residency requirements.
+      Your legal matter is in Alberta. You reside in Alberta. You meet the residency requirements.
       % else:
       You do not meet the residency requirements.
       % endif
@@ -65,8 +200,8 @@ attachments:
       % endif
       
       Your birthday is ${ format_date(birthday, format='EEEE, MMMM d, yyyy') }, which can also be written as ${ format_date(birthday, format="yyyy-MM-dd") }.
-              
-      Your signature: ${ user.signature }
+      
+            Your signature: ${ user.signature }
 ---
 generic object: Individual
 question: |
@@ -74,12 +209,6 @@ question: |
 fields: 
   - First Name: x.name.first
   - Last Name: x.name.last
----
-question: Do you live with any family members?
-yesno: family.there_are_any
----
-question: Do you live with other family members?
-yesno: family.there_is_another
 ---
 question: Have you used Legal Aid Alberta before on an unrelated matter?
 yesno: user.has_prior_issue
@@ -116,9 +245,6 @@ choices:
   - family
   - not sure
 ---
-question: Do you have a low annual household income relative to the number of people in your household?
-yesno: low_income
----
 question: What is your birthday?
 fields:
   - Birthday: birthday
@@ -126,3 +252,42 @@ fields:
 ---
 question: Please sign
 signature: user.signature
+---
+question: |
+  What can you tell me about your financial situation?
+fields:
+  - Do you have assets?: user.assets.exists
+    datatype: yesnowide
+  - How much are your assets worth?: user.assets.value
+    datatype: currency
+    show if: user.assets.exists
+  - Do you know your income for the past 30 days?: user.income_month.exists
+    datatype: yesnowide
+  - What was your income in the last 30 days?: user.income_month.value
+    datatype: currency
+    show if: user.income_month.exists
+  - Do you know your income for the past year?: user.income_year.exists
+    datatype: yesnowide
+  - What was your income over the past year?: user.income_year.value
+    datatype: currency
+    show if: user.income_year.exists
+
+---
+question: |
+  What else do you know about ${ family[i] }?
+fields:
+  - Do they have assets?: family[i].assets.exists
+    datatype: yesnowide
+  - How much are their assets worth?: family[i].assets.value
+    datatype: currency
+    show if: family[i].assets.exists
+  - Do you know their income for the past 30 days?: family[i].income_month.exists
+    datatype: yesnowide
+  - What was their income in the last 30 days?: family[i].income_month.value
+    datatype: currency
+    show if: family[i].income_month.exists
+  - Do you know their income for the past year?: family[i].income_year.exists
+    datatype: yesnowide
+  - What was their income over the past year?: family[i].income_year.value
+    datatype: currency
+    show if: family[i].income_year.exists
