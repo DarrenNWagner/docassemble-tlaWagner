@@ -126,9 +126,10 @@ code: |
 ---
 mandatory: true
 question: Results
-attachments:
-  - Name: Document
-    filename: Advice Memo on Legal Aid Eligibility
+attachments: 
+  - Name: Advice_Memo_on_Legal_Aid_Eligibility
+    variable name: Advice_Memo_on_Legal_Aid_Eligibility
+    filename: Advice_Memo_on_Legal_Aid_Eligibility
     content: |
       
       Advice Memo on Legal Aid Eligibility:
@@ -205,7 +206,19 @@ attachments:
       
       Your birthday is ${ format_date(birthday, format='EEEE, MMMM d, yyyy') }, which can also be written as ${ format_date(birthday, format="yyyy-MM-dd") }.
       
-            Your signature: ${ user.signature }
+      Your signature ${ user.signature }.
+      
+      % if request_notification_sent:
+      You requested approval.
+      % endif
+      
+      The reviewer
+      % if reviewer_response:
+      approved
+      % else:
+      did not approve
+      % endif
+      this advice memo on your eligibility for legal aid assistance.       
 ---
 generic object: Individual
 question: |
@@ -295,3 +308,72 @@ fields:
   - What was their income over the past year?: family[i].income_year.value
     datatype: currency
     show if: family[i].income_year.exists
+---
+default role: client
+code: |
+  multi_user = True
+  reviewer_email = "darrennwagner@gmail.com"
+  role = 'client'
+  if user_logged_in() and user_info().email == reviewer_email:
+    role = 'reviewer'
+---
+code: |
+  request_notification_sent = send_email(to=reviewer_email, template=request_notification, attachments=[Advice_Memo_on_Legal_Aid_Eligibility])
+---
+code: |
+  response_notification_sent = send_email(to=reviewer_email, template=response_notification)
+---
+template: request_notification
+subject: New Request
+content: |
+  A client has requested an advice memo about legal aid eligibility, [click here](${ interview_url() }_ to respond.
+---
+template: response_notification
+subject: Response Received
+content: |
+  Your reviewer has provided an answer to you request for a legal aid advice memo, [click here](${ interview_url() }) to view it.
+---
+event: role_event
+question: Advice Memo is being Reviewed
+subquestion: |
+  You are not authorized to look at the next screen of this interview.
+  
+  % if 'client' in role_needed:
+  We are waiting for the client, and you are a reviewer.
+  % elif 'reviewer' in role_needed:
+  We are waiting for the reviewer, and you are the client.
+  % endif
+  
+  Please have the other party go to [this link](${ interview_url() }) to continue.
+buttons:
+  - Check: refresh
+---
+question: If your eligibility information is ready to be reviewed, please select review.
+fields:
+  - Request: request
+---
+role: reviewer
+question: Your review of the attached documents is required.
+subquestion: |
+  The client said ${ request }. Do you approve?
+yesno: reviewer_response
+---
+role:
+  - client
+  - reviewer
+mandatory: True
+question: Results
+subquestion: |
+  The client said ${ request }.
+  
+  The request was sent to the reviewer who
+  % if reviewer_response:
+  approved
+  % else:
+  did not approve
+  % endif
+  the request.
+---
+mandatory: True
+code: |
+  need(request, request_notification_sent, reviewer_response, response_notification_sent)
